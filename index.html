@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>English for International Tourism — Intermediate</title>
-<meta name="description" content="Bản đọc số hoá của giáo trình English for International Tourism — Intermediate, có mục lục theo unit và trình phát audio.">
+<title>Business Result Intermediate B1 — Study Guide</title>
+<meta name="description" content="Ghi chú ôn tập Business Result Intermediate B1: 15 unit, từ vựng, ngữ pháp, mẫu câu giao tiếp và 63 bài nghe.">
 <link rel="stylesheet" href="style.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📒</text></svg>">
 </head>
 <body>
 
@@ -19,10 +19,10 @@
   </button>
 
   <a class="brand" href="#" id="btnHome" title="Về trang chủ">
-    <span class="brand-mark" aria-hidden="true">📘</span>
+    <span class="brand-mark" aria-hidden="true">📒</span>
     <span class="brand-text">
-      <strong>English for International Tourism</strong>
-      <small>Intermediate · Coursebook</small>
+      <strong>Business Result Intermediate</strong>
+      <small>B1 · Study Guide</small>
     </span>
   </a>
 
@@ -67,9 +67,9 @@
     <!-- ── Trang chủ ── -->
     <section class="view" id="viewHome">
       <div class="hero">
-        <p class="hero-kicker">Giáo trình · Pearson 2013</p>
-        <h1>English for International Tourism</h1>
-        <p class="hero-sub">Intermediate — Coursebook · Peter Strutt</p>
+        <p class="hero-kicker">Ghi chú ôn tập · B1</p>
+        <h1>Business Result Intermediate</h1>
+        <p class="hero-sub">Từ vựng · ngữ pháp · mẫu câu giao tiếp — bám theo giáo trình Oxford University Press</p>
         <div class="hero-stats" id="heroStats"></div>
       </div>
 
@@ -78,7 +78,7 @@
       <h2 class="section-label">Chọn unit</h2>
       <div class="card-grid" id="unitGrid"></div>
 
-      <h2 class="section-label">Phần khác</h2>
+      <h2 class="section-label">Tra cứu nhanh</h2>
       <div class="card-grid card-grid--sm" id="extraGrid"></div>
     </section>
 
@@ -114,8 +114,8 @@
 
   <div class="player-body">
     <div class="player-meta">
-      <strong id="npTitle">Chưa chọn audio</strong>
-      <span id="npSub">Bấm 🎧 trong bài, hoặc mở thư viện audio</span>
+      <strong id="npTitle">Chưa chọn bài nghe</strong>
+      <span id="npSub">Mở một unit để thấy bài nghe, hoặc bấm Thư viện</span>
     </div>
     <div class="player-seek">
       <span class="time" id="npCur">0:00</span>
@@ -144,8 +144,8 @@
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="libTitle">
     <header class="modal-head">
       <div>
-        <h2 id="libTitle">Thư viện audio</h2>
-        <p id="libHint">63 tệp · bấm để phát</p>
+        <h2 id="libTitle">Thư viện bài nghe</h2>
+        <p id="libHint">63 tệp · gộp theo unit · bấm để phát</p>
       </div>
       <button class="icon-btn" data-close aria-label="Đóng">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -153,20 +153,18 @@
     </header>
 
     <div class="modal-warn" id="libWarn">
-      <strong>⚠️ Audio không khớp sách.</strong>
-      Thư mục audio là của <em>Business Result Intermediate</em> (Oxford), còn nội dung sách này là
-      <em>English for International Tourism</em> (Pearson) — hai giáo trình khác nhau, nên không có
-      liên kết sẵn giữa bài nghe và tệp mp3. Bạn vẫn nghe được mọi tệp ở đây, và có thể tự gán tệp cho
-      từng chỗ 🎧; lựa chọn được lưu lại trong trình duyệt.
+      <strong>🎧 Bài nghe được đánh số theo unit.</strong>
+      Tệp <code>br2_003_a<b>3</b>_<b>2</b>.mp3</code> là bài nghe <b>3.2</b> — tức Unit 3, bài thứ hai,
+      đúng cách sách đánh dấu <em>▶ 3.2</em> ở đầu mỗi bài tập nghe. Mở một unit là thấy sẵn danh sách
+      bài nghe của unit đó; không cần gán tay.
       <button class="link-btn" id="btnWarnHide">Đã hiểu, ẩn đi</button>
     </div>
 
     <div class="modal-tools">
       <div class="search-wrap search-wrap--plain">
         <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-        <input type="search" id="libSearch" placeholder="Lọc theo tên tệp…" aria-label="Lọc tệp audio" autocomplete="off">
+        <input type="search" id="libSearch" placeholder="Lọc theo số bài hoặc tên tệp…" aria-label="Lọc bài nghe" autocomplete="off">
       </div>
-      <button class="pill" id="btnUnassign" hidden>Bỏ gán</button>
     </div>
 
     <div class="modal-body" id="libList"></div>

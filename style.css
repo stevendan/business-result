@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   English for International Tourism — reader
+   Business Result Intermediate B1 — study guide reader
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Tokens ───────────────────────────────────────────────── */
@@ -414,16 +414,22 @@ main {
 }
 .prose h4 {
   font-family: var(--font-ui);
-  display: flex; align-items: center; flex-wrap: wrap; gap: 9px;
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 9px;
   margin: 30px 0 10px;
-  font-size: 13px; font-weight: 700;
-  letter-spacing: .07em; text-transform: uppercase;
+  font-size: 15px; font-weight: 700; letter-spacing: -.005em;
   color: var(--accent);
   scroll-margin-top: calc(var(--topbar-h) + 16px);
 }
 .prose h4::before {
   content: ""; width: 16px; height: 2px; flex: none;
+  align-self: center;
   background: var(--accent); border-radius: 2px;
+}
+.prose h5 {
+  font-family: var(--font-ui);
+  margin: 24px 0 8px; font-size: 13.5px; font-weight: 700;
+  color: var(--ink-soft);
+  scroll-margin-top: calc(var(--topbar-h) + 16px);
 }
 
 .prose p { margin: 0 0 16px; }
@@ -476,33 +482,99 @@ mark {
   color: inherit; border-radius: 3px; padding: 0 2px;
 }
 
-/* ── Audio chip ── */
-.chip-audio {
-  display: inline-flex; align-items: center; gap: 6px;
-  vertical-align: baseline;
-  margin: 0 3px; padding: 3px 11px 3px 8px;
+/* ── Bảng ──
+   Phần lớn nội dung guide nằm trong bảng, nên bảng phải đọc tốt ở mọi bề ngang.
+   Cột đầu là "khoá" (từ / cụm / thì), luôn được nhấn đậm hơn. */
+.table-wrap {
+  margin: 0 0 20px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  scrollbar-width: thin;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-ui);
+  font-size: 14px; line-height: 1.55;
+}
+.prose thead th {
+  position: sticky; top: 0; z-index: 1;
+  padding: 10px 14px; text-align: left;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--line-strong);
+  font-size: 11.5px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.prose tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.prose tbody tr:last-child td { border-bottom: 0; }
+.prose tbody tr:hover td { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.prose td.c1 { font-weight: 600; color: var(--ink); }
+.prose td.c1 code, .prose td.c1 strong { font-weight: 700; }
+.prose table code {
+  font: 600 12.5px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  background: var(--bg-sunken); border-radius: 5px; padding: 1px 5px;
+}
+
+.prose code {
+  font: 600 .88em/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  background: var(--bg-sunken); border-radius: 5px; padding: 1px 5px;
+}
+
+/* liên kết chéo giữa các mục */
+.prose .xlink {
+  font-family: var(--font-ui); font-size: .94em; font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.prose .xlink:hover { border-bottom-color: var(--accent); }
+
+/* ── Bảng bài nghe của unit ── */
+.unit-audio {
+  margin: 0 0 26px; padding: 14px 16px;
   background: var(--accent-soft);
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: var(--radius);
+}
+.ua-head {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 11px;
+  font-family: var(--font-ui);
+}
+.ua-ico { font-size: 15px; }
+.ua-head b { font-size: 13.5px; font-weight: 700; color: var(--accent-deep); }
+:root[data-theme="dark"] .ua-head b { color: var(--accent); }
+.ua-head small { font-size: 11.5px; color: var(--ink-faint); }
+
+.ua-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.ua-track {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 14px 6px 10px;
+  background: var(--bg-elev);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-radius: 999px;
-  font: 650 12px/1.5 var(--font-ui);
+  font: 650 13px/1.4 var(--font-ui);
   color: var(--accent-deep);
-  transition: background .15s, transform .12s, box-shadow .15s;
+  transition: transform .12s, box-shadow .15s, background .15s, color .15s;
 }
-:root[data-theme="dark"] .chip-audio { color: var(--accent); }
-.chip-audio:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.chip-audio[data-state="empty"] {
-  background: transparent; color: var(--ink-faint);
-  border-color: var(--line-strong); border-style: dashed;
+:root[data-theme="dark"] .ua-track { color: var(--accent); }
+.ua-track:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.ua-track .ua-dot {
+  font-size: 9px; letter-spacing: -1px;
+  color: var(--accent); font-variant-numeric: tabular-nums;
 }
-.chip-audio[data-state="playing"] {
-  background: var(--accent); color: var(--accent-ink);
-  border-color: var(--accent);
+.ua-track .ua-no { font-variant-numeric: tabular-nums; }
+.ua-track.is-current {
+  background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
 }
-.chip-audio .chip-label {
-  max-width: 190px; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
-}
-.prose h4 .chip-audio { text-transform: none; letter-spacing: 0; }
+.ua-track.is-current .ua-dot { color: var(--accent-ink); }
 
 /* ── Search results ── */
 .results { display: grid; gap: 10px; }
@@ -751,6 +823,8 @@ input[type="range"]::-moz-range-thumb {
   .hero { padding: 26px 20px; }
   .prose { font-size: 16px; }
   .prose h3 { margin-top: 36px; font-size: 18.5px; }
+  .prose table { font-size: 13.5px; }
+  .prose thead th, .prose tbody td { padding: 9px 11px; }
 
   .player { gap: 10px; padding: 0 10px; }
   .player-extra #btnLoop, .player-extra #btnRate { display: none; }
@@ -783,7 +857,9 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @media print {
-  .topbar, .sidebar, .player, .pager, .crumbs, .progressbar, .modal { display: none !important; }
+  .topbar, .sidebar, .player, .pager, .crumbs, .progressbar, .modal,
+  .unit-audio { display: none !important; }
   main { padding: 0; }
-  .chip-audio { border: 1px solid #999; }
+  .table-wrap { overflow: visible; break-inside: avoid; }
+  .prose thead th { position: static; }
 }

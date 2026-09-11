@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   English for International Tourism — reader
-   Trình đọc sách + trình phát audio, không phụ thuộc thư viện ngoài.
+   Business Result Intermediate B1 — study guide reader
+   Trình đọc ghi chú + trình phát audio, không phụ thuộc thư viện ngoài.
    ═══════════════════════════════════════════════════════════ */
 (() => {
 'use strict';
@@ -12,11 +12,11 @@ const HEADPHONE = '\u{1F3A7}';
 /* ── localStorage an toàn ─────────────────────────────────── */
 const store = {
   get(key, fallback) {
-    try { const v = localStorage.getItem('eit:' + key); return v === null ? fallback : JSON.parse(v); }
+    try { const v = localStorage.getItem('brsg:' + key); return v === null ? fallback : JSON.parse(v); }
     catch { return fallback; }
   },
   set(key, value) {
-    try { localStorage.setItem('eit:' + key, JSON.stringify(value)); } catch { /* chế độ riêng tư */ }
+    try { localStorage.setItem('brsg:' + key, JSON.stringify(value)); } catch { /* chế độ riêng tư */ }
   }
 };
 
@@ -33,20 +33,27 @@ const esc = (s) => s
   .replace(/&/g, '&amp;').replace(/</g, '&lt;')
   .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-function inline(text, { chips = true } = {}) {
+/** `#mục` và `#mục/neo` trở thành nút điều hướng trong trang. */
+function link(href, label) {
+  if (!href.startsWith('#')) return `<a href="${href}" target="_blank" rel="noopener">${label}</a>`;
+  const [sec, head] = href.slice(1).split('/');
+  return `<a class="xlink" href="${href}" data-go="${sec}"` +
+         (head ? ` data-head="${head}"` : '') + `>${label}</a>`;
+}
+
+function inline(text) {
   let s = esc(text);
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => link(href, label));
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  if (chips) {
-    s = s.split(HEADPHONE).join(
-      '<button type="button" class="chip-audio" data-chip data-state="empty">' +
-      HEADPHONE + '<span class="chip-label">Chọn audio</span></button>'
-    );
-  }
   return s;
 }
+
+const RE_TABLE_SEP = /^\s*\|[-\s:|]+\|\s*$/;
+const cells = (line) => line.trim()
+  .replace(/^\|/, '').replace(/\|$/, '')
+  .split('|').map((c) => c.trim());
 
 /** Markdown của riêng file này: mỗi khối là một dòng, cách nhau bằng dòng trống. */
 function mdToHtml(md) {
@@ -71,15 +78,35 @@ function mdToHtml(md) {
     const raw = lines[i];
     if (!raw.trim()) continue;
 
-    const head = /^(#{1,4})\s+(.*)$/.exec(raw);
+    const head = /^(#{1,5})\s+(.*)$/.exec(raw);
     if (head) {
       flush();
-      const level = head[1].length;
-      let text = head[2];
-      if (level === 4 && /^Track\s/.test(text)) text += ' ' + HEADPHONE;
-      out.push(`<h${level} id="${slug(head[2])}">${inline(text)}</h${level}>`);
+      const level = Math.min(head[1].length, 6);
+      out.push(`<h${level} id="${slug(head[2])}">${inline(head[2])}</h${level}>`);
       continue;
     }
+
+    /* bảng: dòng đầu + dòng phân cách ---|--- */
+    if (raw.trim().startsWith('|') && RE_TABLE_SEP.test(lines[i + 1] || '')) {
+      flush();
+      const rows = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) rows.push(lines[i++]);
+      i--;
+      const cols = cells(rows[0]);
+      const body = rows.slice(2).filter((r) => r.trim());
+      out.push(
+        '<div class="table-wrap"><table>' +
+        '<thead><tr>' + cols.map((c) => `<th>${inline(c)}</th>`).join('') + '</tr></thead>' +
+        '<tbody>' + body.map((r) =>
+          `<tr>${cells(r).map((c, n) =>
+            `<td${n === 0 ? ' class="c1"' : ''} data-th="${esc(cols[n] || '')}">${inline(c)}</td>`
+          ).join('')}</tr>`).join('') +
+        '</tbody></table></div>'
+      );
+      continue;
+    }
+
+    if (/^-{3,}$/.test(raw.trim())) { flush(); out.push('<hr>'); continue; }
 
     if (raw.startsWith('>')) {                       // blockquote (gộp dòng liền kề)
       flush();
@@ -89,7 +116,7 @@ function mdToHtml(md) {
         i++;
       }
       i--;
-      const warn = /⚠️|Thiếu nội dung|Khoảng trống/.test(buf.join(' '));
+      const warn = /⚠️|Bẫy|Lỗi|Cảnh báo/.test(buf.join(' '));
       out.push(`<blockquote${warn ? ' class="warn"' : ''}>${mdToHtml(buf.join('\n'))}</blockquote>`);
       continue;
     }
@@ -107,9 +134,16 @@ function mdToHtml(md) {
   return out.join('\n');
 }
 
-/* ═══════════ 2. TÁCH SÁCH THÀNH CÁC MỤC ═══════════ */
+/* ═══════════ 2. TÁCH THÀNH CÁC MỤC ═══════════ */
 
 const book = { front: [], sections: [], notes: [], index: [] };
+
+/** Dòng bảng thành câu đọc được, để tìm kiếm ra kết quả tử tế. */
+function plain(line) {
+  let s = line.trim();
+  if (s.startsWith('|')) s = cells(s).filter(Boolean).join(' — ');
+  return s.replace(/[*`#]/g, '').trim();
+}
 
 function parseBook(md) {
   let current = null;
@@ -125,20 +159,16 @@ function parseBook(md) {
 
   book.notes = book.front.filter((l) => l.startsWith('>')).map((l) => l.replace(/^>\s?/, ''));
 
-  book.sections = book.sections.filter((s) => s.title !== 'Mục lục');
-
   book.sections.forEach((sec) => {
-    const md = sec.lines.join('\n');
     sec.id = slug(sec.title);
-    sec.md = md;
-    sec.html = `<h2>${inline(sec.title)}</h2>\n` + mdToHtml(md);
-    sec.audioCount = (md.match(new RegExp(HEADPHONE, 'gu')) || []).length
-                   + (md.match(/^#### Track /gm) || []).length;
+    sec.headHtml = `<h2>${inline(sec.title)}</h2>`;
+    sec.bodyHtml = mdToHtml(sec.lines.join('\n'));
 
     const unit = /^Unit\s+(\d+)\s*—\s*(.+)$/.exec(sec.title);
     sec.isUnit = Boolean(unit);
-    sec.num = unit ? unit[1] : null;
+    sec.num = unit ? Number(unit[1]) : null;
     sec.shortTitle = unit ? unit[2] : sec.title;
+    sec.tracks = sec.isUnit ? audioFiles.filter((f) => f.group === sec.num) : [];
 
     sec.lessons = [];
     let head = null;
@@ -149,11 +179,10 @@ function parseBook(md) {
         sec.lessons.push(head);
         continue;
       }
-      if (/^#{1,4}\s/.test(line) || !line.trim() || line.startsWith('>')) continue;
-      book.index.push({
-        sec, head,
-        text: line.replace(/[*`#]/g, '').replace(new RegExp(HEADPHONE, 'gu'), '').trim()
-      });
+      if (/^#{1,5}\s/.test(line) || !line.trim() || line.startsWith('>')) continue;
+      if (RE_TABLE_SEP.test(line) || /^-{3,}$/.test(line.trim())) continue;
+      const text = plain(line);
+      if (text) book.index.push({ sec, head, text });
     }
   });
 }
@@ -163,21 +192,21 @@ function parseBook(md) {
 const audioFiles = (window.AUDIO_FILES || []).map((f, i) => ({ ...f, i }));
 const byName = new Map(audioFiles.map((f) => [f.name, f]));
 
-const audio      = $('#audio');
-const playerEl   = $('#player');
-const seekEl     = $('#seek');
-const RATES      = [0.75, 1, 1.25, 1.5, 2];
+const audio    = $('#audio');
+const playerEl = $('#player');
+const seekEl   = $('#seek');
+const RATES    = [0.75, 1, 1.25, 1.5, 2];
 
-let assignments  = store.get('assign', {});
-let currentFile  = null;
-let assignTarget = null;                              // key của chip đang chờ gán
+let currentFile = null;
 
 const fmtTime = (s) => {
   if (!isFinite(s)) return '0:00';
   const m = Math.floor(s / 60);
   return m + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 };
-const fileLabel = (f) => `Nhóm ${f.group} · bài ${f.index}`;
+/** Sách đánh số bài nghe theo dạng "unit.track" — dùng đúng cách đánh số đó. */
+const trackNo = (f) => `${f.group}.${f.index}`;
+const fileLabel = (f) => `Unit ${f.group} · bài nghe ${trackNo(f)}`;
 
 function setSeekFill() {
   const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
@@ -194,39 +223,43 @@ function play(file, { silent = false } = {}) {
     audio.src = encodeURI(file.src);
     audio.playbackRate = store.get('rate', 1);
     playerEl.dataset.empty = 'false';
-    $('#npTitle').textContent = file.name;
-    $('#npSub').textContent = fileLabel(file);
+    $('#npTitle').textContent = 'Bài nghe ' + trackNo(file);
+    $('#npSub').textContent = file.name;
     if ('mediaSession' in navigator && typeof MediaMetadata === 'function') {
       try {
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: file.name, artist: fileLabel(file),
-          album: 'English for International Tourism'
+          title: 'Bài nghe ' + trackNo(file), artist: fileLabel(file),
+          album: 'Business Result Intermediate'
         });
       } catch { /* trình duyệt không hỗ trợ */ }
     }
   }
   audio.play().catch(() => { if (!silent) toast('Trình duyệt chặn tự động phát — bấm ▶ để nghe.'); });
-  refreshChips();
+  refreshTracks();
   renderLibrary();
 }
 
 function step(delta) {
-  if (!currentFile) return;
-  const next = audioFiles[(currentFile.i + delta + audioFiles.length) % audioFiles.length];
-  play(next);
+  if (!audioFiles.length) return;
+  const at = currentFile ? currentFile.i : -1;
+  play(audioFiles[(at + delta + audioFiles.length) % audioFiles.length]);
 }
 
 audio.addEventListener('timeupdate', setSeekFill);
 audio.addEventListener('loadedmetadata', setSeekFill);
-audio.addEventListener('play',  () => { playerEl.classList.add('is-playing'); refreshChips(); });
-audio.addEventListener('pause', () => { playerEl.classList.remove('is-playing'); refreshChips(); });
+audio.addEventListener('play',  () => { playerEl.classList.add('is-playing'); refreshTracks(); renderLibrary(); });
+audio.addEventListener('pause', () => { playerEl.classList.remove('is-playing'); refreshTracks(); renderLibrary(); });
 audio.addEventListener('ended', () => { if (!audio.loop) step(1); });
 audio.addEventListener('error', () => {
   if (audio.src) toast('Không mở được tệp audio. Kiểm tra thư mục audio còn nguyên không.');
 });
 
 $('#btnPlay').addEventListener('click', () => {
-  if (!currentFile) { openLibrary(); return; }
+  if (!currentFile) {
+    const first = (activeSection && activeSection.tracks.length) ? activeSection.tracks[0] : audioFiles[0];
+    if (first) play(first); else openLibrary();
+    return;
+  }
   audio.paused ? audio.play().catch(() => {}) : audio.pause();
 });
 $('#btnPrev').addEventListener('click', () => step(-1));
@@ -255,30 +288,49 @@ $('#btnLoop').addEventListener('click', (e) => {
   toast(audio.loop ? 'Bật lặp lại một bài.' : 'Tắt lặp lại.');
 });
 
+/* ── Bảng bài nghe của unit ───────────────────────────────── */
+function unitAudioHtml(sec) {
+  if (!sec.tracks.length) return '';
+  return `<section class="unit-audio" aria-label="Bài nghe của ${esc(sec.title)}">
+    <div class="ua-head">
+      <span class="ua-ico" aria-hidden="true">${HEADPHONE}</span>
+      <b>Bài nghe Unit ${sec.num}</b>
+      <small>${sec.tracks.length} tệp · đánh số như trong sách</small>
+    </div>
+    <div class="ua-list">${sec.tracks.map((f) => `
+      <button class="ua-track" data-track="${esc(f.name)}">
+        <span class="ua-dot" aria-hidden="true">▶</span>
+        <span class="ua-no">${trackNo(f)}</span>
+      </button>`).join('')}</div>
+  </section>`;
+}
+
+function refreshTracks() {
+  $$('#docBody [data-track]').forEach((el) => {
+    const on = currentFile && currentFile.name === el.dataset.track;
+    el.classList.toggle('is-current', Boolean(on));
+    el.classList.toggle('is-playing', Boolean(on && !audio.paused));
+    el.querySelector('.ua-dot').textContent = (on && !audio.paused) ? '▮▮' : '▶';
+  });
+}
+
 /* ── Thư viện audio ───────────────────────────────────────── */
 const libraryEl = $('#library');
 
-function openLibrary(chipKey = null) {
-  assignTarget = chipKey;
-  $('#libTitle').textContent = chipKey ? 'Gán audio cho bài nghe này' : 'Thư viện audio';
-  $('#libHint').textContent = chipKey
-    ? 'Chọn một tệp để gán và phát — lựa chọn được nhớ lại lần sau.'
-    : `${audioFiles.length} tệp · bấm để phát`;
-  $('#btnUnassign').hidden = !(chipKey && assignments[chipKey]);
+function openLibrary() {
+  $('#libHint').textContent = `${audioFiles.length} tệp · gộp theo unit · bấm để phát`;
   libraryEl.hidden = false;
   renderLibrary();
   setTimeout(() => $('#libSearch').focus(), 60);
 }
 
-function closeLibrary() {
-  libraryEl.hidden = true;
-  assignTarget = null;
-}
+function closeLibrary() { libraryEl.hidden = true; }
 
 function renderLibrary() {
   if (libraryEl.hidden) return;
   const q = $('#libSearch').value.trim().toLowerCase();
-  const hits = audioFiles.filter((f) => !q || f.name.toLowerCase().includes(q));
+  const hits = audioFiles.filter((f) =>
+    !q || f.name.toLowerCase().includes(q) || trackNo(f).includes(q));
   const list = $('#libList');
 
   if (!hits.length) {
@@ -290,13 +342,14 @@ function renderLibrary() {
   for (const f of hits) {
     if (f.group !== group) {
       group = f.group;
-      html += `<div class="lib-group">Nhóm ${group}</div>`;
+      const sec = book.sections.find((s) => s.num === group);
+      html += `<div class="lib-group">Unit ${group}${sec ? ' · ' + esc(sec.shortTitle) : ''}</div>`;
     }
     const cur = currentFile && currentFile.name === f.name;
     html += `<button class="lib-item${cur ? ' is-current' : ''}" data-file="${esc(f.name)}">
       <span class="dot">${cur && !audio.paused ? '▮▮' : '▶'}</span>
-      <span class="nm">${esc(f.name)}</span>
-      <span class="sub">bài ${f.index}</span>
+      <span class="nm">Bài nghe ${trackNo(f)}</span>
+      <span class="sub">${esc(f.name)}</span>
     </button>`;
   }
   list.innerHTML = html;
@@ -306,26 +359,11 @@ $('#libList').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-file]');
   if (!btn) return;
   const file = byName.get(btn.dataset.file);
-  if (!file) return;
-  if (assignTarget) {
-    assignments[assignTarget] = file.name;
-    store.set('assign', assignments);
-    toast(`Đã gán ${file.name} cho bài nghe này.`);
-    closeLibrary();
-  }
-  play(file);
+  if (file) play(file);
 });
 
 $('#libSearch').addEventListener('input', renderLibrary);
-$('#btnLibrary').addEventListener('click', () => openLibrary());
-$('#btnUnassign').addEventListener('click', () => {
-  if (!assignTarget) return;
-  delete assignments[assignTarget];
-  store.set('assign', assignments);
-  refreshChips();
-  closeLibrary();
-  toast('Đã bỏ gán.');
-});
+$('#btnLibrary').addEventListener('click', openLibrary);
 $$('[data-close]', libraryEl).forEach((el) => el.addEventListener('click', closeLibrary));
 
 if (store.get('warnHidden', false)) $('#libWarn').hidden = true;
@@ -334,39 +372,14 @@ $('#btnWarnHide').addEventListener('click', () => {
   store.set('warnHidden', true);
 });
 
-/* ── Chip 🎧 trong nội dung ───────────────────────────────── */
-function refreshChips() {
-  $$('#docBody [data-chip]').forEach((chip) => {
-    const file = byName.get(assignments[chip.dataset.key]);
-    const label = chip.querySelector('.chip-label');
-    if (!file) {
-      chip.dataset.state = 'empty';
-      label.textContent = 'Chọn audio';
-      chip.title = 'Chưa gán tệp audio — bấm để chọn';
-      return;
-    }
-    const playing = currentFile && currentFile.name === file.name && !audio.paused;
-    chip.dataset.state = playing ? 'playing' : 'ready';
-    label.textContent = file.name.replace(/^br2_003_/, '').replace(/\.mp3$/, '');
-    chip.title = `${file.name} — bấm để phát; Shift+bấm (hoặc nhấn giữ) để đổi tệp`;
-  });
-}
-
+/* phát một bài nghe từ bảng trong nội dung */
 $('#docBody').addEventListener('click', (e) => {
-  const chip = e.target.closest('[data-chip]');
-  if (!chip) return;
-  const file = byName.get(assignments[chip.dataset.key]);
-  if (!file || e.shiftKey) { openLibrary(chip.dataset.key); return; }
-  if (currentFile && currentFile.name === file.name && !audio.paused) { audio.pause(); return; }
+  const el = e.target.closest('[data-track]');
+  if (!el) return;
+  const file = byName.get(el.dataset.track);
+  if (!file) return;
+  if (currentFile === file && !audio.paused) { audio.pause(); return; }
   play(file);
-});
-
-/* nhấn giữ trên điện thoại = đổi tệp đã gán */
-$('#docBody').addEventListener('contextmenu', (e) => {
-  const chip = e.target.closest('[data-chip]');
-  if (!chip) return;
-  e.preventDefault();
-  openLibrary(chip.dataset.key);
 });
 
 /* ═══════════ 4. ĐIỀU HƯỚNG & HIỂN THỊ ═══════════ */
@@ -385,10 +398,10 @@ function buildChrome() {
   /* thẻ chọn unit trên thanh trên cùng */
   const sel = $('#unitSelect');
   sel.innerHTML =
-    '<option value="">📖 Trang chủ</option>' +
+    '<option value="">📒 Trang chủ</option>' +
     `<optgroup label="Unit">${units.map((s) =>
       `<option value="${s.id}">Unit ${s.num} — ${esc(s.shortTitle)}</option>`).join('')}</optgroup>` +
-    `<optgroup label="Phần khác">${others.map((s) =>
+    `<optgroup label="Tra cứu">${others.map((s) =>
       `<option value="${s.id}">${esc(s.title)}</option>`).join('')}</optgroup>`;
   sel.addEventListener('change', () => { go(sel.value || null); });
 
@@ -409,7 +422,7 @@ function buildChrome() {
     <button class="card" data-go="${s.id}">
       <span class="card-top">
         <span class="card-num">${s.isUnit ? 'Unit ' + s.num : '§'}</span>
-        ${s.audioCount ? `<span class="card-audio">${HEADPHONE} ${s.audioCount}</span>` : ''}
+        ${s.tracks.length ? `<span class="card-audio">${HEADPHONE} ${s.tracks.length}</span>` : ''}
       </span>
       <h3>${esc(s.isUnit ? s.shortTitle : s.title)}</h3>
       <p>${s.lessons.length ? esc(s.lessons.map((l) => l.title).join(' · ')) : 'Mở để xem nội dung'}</p>
@@ -419,12 +432,10 @@ function buildChrome() {
 
   /* số liệu + ghi chú trên trang chủ */
   const lessons = book.sections.reduce((n, s) => n + s.lessons.length, 0);
-  const audios  = book.sections.reduce((n, s) => n + s.audioCount, 0);
   $('#heroStats').innerHTML =
-    `<span>${units.length} unit</span><span>${lessons} bài học</span>` +
-    `<span>${HEADPHONE} ${audios} chỗ nghe</span><span>${audioFiles.length} tệp mp3</span>`;
-  $('#homeNotes').innerHTML = book.notes
-    .map((n) => `<div class="note">${inline(n, { chips: false })}</div>`).join('');
+    `<span>${units.length} unit</span><span>${lessons} mục</span>` +
+    `<span>${HEADPHONE} ${audioFiles.length} bài nghe</span><span>${others.length} phần tra cứu</span>`;
+  $('#homeNotes').innerHTML = book.notes.map((n) => `<div class="note">${inline(n)}</div>`).join('');
 }
 
 function go(sectionId, headId = null, { push = true } = {}) {
@@ -444,9 +455,8 @@ function go(sectionId, headId = null, { push = true } = {}) {
   if (!sec) { go(null, null, { push }); return; }
 
   activeSection = sec;
-  $('#docBody').innerHTML = sec.html;
-  $$('#docBody [data-chip]').forEach((chip, i) => { chip.dataset.key = `${sec.id}#${i}`; });
-  refreshChips();
+  $('#docBody').innerHTML = sec.headHtml + unitAudioHtml(sec) + sec.bodyHtml;
+  refreshTracks();
 
   $('#crumbs').innerHTML =
     `<button data-go="">Trang chủ</button><span>›</span><span>${esc(sec.title)}</span>`;
@@ -516,7 +526,7 @@ function runSearch(query) {
     const from = Math.max(0, at - 60);
     const snippet = (from ? '…' : '') + entry.text.slice(from, at + q.length + 110) + '…';
     hits.push({ ...entry, snippet });
-    if (hits.length >= 60) break;
+    if (hits.length >= 80) break;
   }
 
   $('#searchTitle').textContent = hits.length
