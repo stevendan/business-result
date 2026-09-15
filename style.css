@@ -31,8 +31,8 @@
   --player-h:      74px;
   --sidebar-w:     288px;
 
-  --font-ui:       system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-read:     Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-ui:       "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-read:     "Noto Serif", Georgia, "Times New Roman", serif;
 
   color-scheme: light;
 }
