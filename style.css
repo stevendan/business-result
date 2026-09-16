@@ -827,11 +827,26 @@ input[type="range"]::-moz-range-thumb {
   .prose thead th, .prose tbody td { padding: 9px 11px; }
 
   .player { gap: 10px; padding: 0 10px; }
-  .player-extra #btnLoop, .player-extra #btnRate { display: none; }
   .pill--accent span { display: none; }
   .pill--accent { padding: 0 12px; }
   .player-meta span { display: none; }
   .time { width: 34px; }
+}
+
+/* Phone widths: single row no longer fits prev/play/next + seek + rate/loop/library,
+   so wrap onto two rows instead of hiding controls. */
+@media (max-width: 480px) {
+  :root { --player-h: 118px; }
+
+  .player {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 12px calc(env(safe-area-inset-bottom) * .5 + 8px);
+    row-gap: 8px;
+  }
+  .player-body  { order: 1; flex-basis: 100%; }
+  .player-main  { order: 2; }
+  .player-extra { order: 3; margin-left: auto; }
 }
 
 @media (max-width: 620px) {
